@@ -1,0 +1,13 @@
+env/*
+__pycache__/
+*.log
+*.audit
+*.error
+*~
+*.swp
+*.json
+*.un~
+dist/*
+build/*
+**/*.egg-info/*
+*.swo
