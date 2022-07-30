@@ -40,28 +40,33 @@ class TestCommand(unittest.TestCase):
         pass
 
     def test_dump_file(self):
-        command._dump_file(self.image_url, self.image_name)
+        res = command._dump_file(self.image_url, self.image_name)
 
         self.open.assert_called()
         self.mock_client.get.assert_called()
 
+        self.assertEqual(res._mock_name, self.mock_client.content._mock_name)
+
     def test_dump_file_bad_url(self):
-        command._dump_file(self.image_url.replace("https", "fpt"), self.image_name)
+        res = command._dump_file(self.image_url.replace("https", "fpt"), self.image_name)
 
         assert not self.open.called
         assert not self.mock_client.get.called
 
+        assert not res
+
     def test_download_low(self):
-        command._download(self.pkg)
+        res = command._download(self.pkg)
 
         # the test package doesn't have an image url, therefore
         # 1 call to dump the json
         # 1 call to dump the file
         # 2 * (parent + dependencies)
         self.assertEqual(self.open.call_count, 2*(1 + len(self.pkg["deps"])))
-   
-    def test_download(self):
-       assert False
+        self.assertEqual(set((self.pkg["name"], *self.pkg["deps"])), res.keys())
+        for el in res.values():
+            # they are all the return value of res.content
+            self.assertEqual(el._mock_name, self.mock_client.content._mock_name)
 
     def test_get_data(self):
         assert False
