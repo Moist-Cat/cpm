@@ -92,6 +92,12 @@ def get_command(argv: List[str] = sys.argv[1:]): # pylint: disable=W0102
         help="Place the output in this file",
     )
 
+    debug_parser = subparsers.add_parser(
+        "debug",
+        help=command.debug.__doc__
+    )
+    debug_parser.set_defaults(func=command.debug)
+
     args = parser.parse_args(argv)
     args.func(args)
 

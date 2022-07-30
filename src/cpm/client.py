@@ -99,9 +99,8 @@ class Client(requests.Session):
         self.logger.info("##### INIT ######")
         self.headers["Authorization"] = settings.get_keys()
 
-        self._test_scheme()
-
-        self.logger.info("Server up and running. Item scheme versions match.")
+        if not settings.DEBUG:
+            self._test_scheme()
 
     @check_errors
     def request(self, *args, **kwargs):
@@ -114,18 +113,30 @@ class Client(requests.Session):
         Tests the internal item scheme against the server's (also checking if it's up).
         Doesn't chech types.
         """
-        res = self.get(self.DOCS_URL)
+        try:
+            res = self.get(self.DOCS_URL)
+        except (
+                requests.exceptions.ConnectionError,
+                requests.exceptions.SSLError,
+                requests.exceptions.HTTPError,
+        ) as exc:
+            self.logger_error.critical(exc)
+            self.logger.critical("Couldn't reach the servers.")
+            return
+        self.logger.info("Server up and running.")
         try:
             scheme = res.json()["urls"]["/"]["scheme"]
         except KeyError as exc:
-            msg = "The sheme has been updated"
-            self.logger_audit.critical(msg)
-            self.logger_err.critical(msg)
+            msg = "The item scheme has been updated. Upgrade the client accordingly."
+            self.logger.critical(msg)
+            self.logger_error.critical(msg)
             raise AssertionError(msg) from exc
         del scheme["id"]  # we don't use id
         assert scheme.keys() == self.SCHEME.keys(), set(scheme.keys()).difference(
             set(self.SCHEME)
         )
+        self.logger.info("Item scheme versions match.")
+
 
     @loggedmethod
     def list_item(self, page: int = 0, tags: list = None, name: str = None):

@@ -40,6 +40,8 @@ def get_keys():
 
 
 # logger settings
+LOG_FILE = BASE_DIR / "logs/client.audit"
+ERROR_FILE = BASE_DIR / "logs/client.error"
 LOGGERS = {
     "version": 1,
     "handlers": {
@@ -52,7 +54,7 @@ LOGGERS = {
             "class": "logging.handlers.RotatingFileHandler",
             "maxBytes": 5000000,
             "backupCount": 1,
-            "filename": BASE_DIR / "logs/client.audit",
+            "filename": LOG_FILE,
             "encoding": "utf-8",
             "formatter": "basic",
         },
@@ -60,7 +62,7 @@ LOGGERS = {
             "class": "logging.handlers.RotatingFileHandler",
             "maxBytes": 5000000,
             "backupCount": 1,
-            "filename": BASE_DIR / "logs/client.error",
+            "filename": ERROR_FILE,
             "encoding": "utf-8",
             "formatter": "basic",
         },

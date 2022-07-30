@@ -10,6 +10,7 @@ import yaml
 
 from cpm.client import Client
 from cpm.logging import get_logger
+from cpm import settings
 
 logger = get_logger("audit.command")
 logger_user = get_logger("user_info.command")
@@ -58,8 +59,8 @@ def _dump_file(url, filename):
 
 def _download(name, packages=None):
     """Low level implementation of download."""
-    logger.info("Downloading the %s package.")
-    logger_user.info("Downloading the %s package.")
+    logger.info("Downloading the %s package.", name)
+    logger_user.info("Downloading the %s package.", name)
 
     packages = packages or {}
     data = client.get_item(name)
@@ -120,6 +121,16 @@ def _get_data(file):
     return data
 
 
+def _package(files, filename):
+    """Compress files, delete them afterwards"""
+    logger.info("Zipping %s into a package", files)
+    logger_user.info("Zipping %s into a package", files)
+    with zipfile.ZipFile(filename, "w", zipfile.ZIP_DEFLATED) as zfile:
+        for name in files:
+            zfile.write(name)
+            os.remove(name)
+
+
 def search(args):
     """Search packages on the repository"""
     page = args.page
@@ -159,14 +170,35 @@ def update(args):
     _display(res)
 
 
-def _package(files, filename):
-    """Compress files, delete them afterwards"""
-    logger.info("Zipping %s into a package", files)
-    logger_user.info("Zipping %s into a package", files)
-    with zipfile.ZipFile(filename, "w", zipfile.ZIP_DEFLATED) as zfile:
-        for name in files:
-            zfile.write(name)
-            os.remove(name)
+def compile(args):
+    """Download all packages and compile them into a single file"""
+    file = args.file
+    packages = download(args)
+    first = args.name.split(",")[0]
+
+    compiled = json.loads(packages[first])
+    for lore in packages.values():
+        lore = json.loads(lore)
+        compiled["entries"].extend(lore["entries"])
+        compiled["categories"].extend(lore["categories"])
+    with open(file, "w") as jfile:
+        json.dump(compiled, jfile)
+
+def _tail(name):
+    with open(name) as file:
+        eof = file.seek(0, 2) # end
+        file.seek(0)
+        if eof - 50*200 > 0: # ~ 200 entries 
+            file.seek(eof - 50*200)
+        return file.read()
+
+def debug(args):
+    print()
+    print("### BEGIN DEBUG LOGS ###")
+    print(_tail(settings.LOG_FILE))
+    print("### END DEBUG LOGS ###")
+    print(f"Log file: {settings.LOG_FILE}")
+    print()
 
 
 def download(args):
@@ -182,18 +214,3 @@ def download(args):
         else:
             logger.info("Found duplicate package %s. Ignoring...", name)
     return packages
-
-
-def compile(args):
-    """Download all packages and compile them into a single file"""
-    file = args.file
-    packages = download(args)
-    first = args.name.split(",")[0]
-
-    compiled = json.loads(packages[first])
-    for lore in packages.values():
-        lore = json.loads(lore)
-        compiled["entries"].extend(lore["entries"])
-        compiled["categories"].extend(lore["categories"])
-    with open(file, "w") as jfile:
-        json.dump(compiled, jfile)
