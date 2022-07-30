@@ -81,6 +81,7 @@ class Client(requests.Session):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.logger.info("##### INIT ######")
         self.headers["Authorization"] = settings.get_keys()
         self._test_scheme()
 
