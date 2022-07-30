@@ -38,7 +38,7 @@ def search(args):
     data = client.list_item(page, tags, name)
     for item in data:
         print(item["name"])
-
+def display():pass
 def info(args):
     data = client.get_item(args.name)
     print(f"""
@@ -80,7 +80,7 @@ def _dump_file(url, filename):
         return
     with open(filename, "w+b") as file:
         file.write(res.content)
-    return res.text
+    return res.content
 
 def _package(files, filename):
     with zipfile.ZipFile(filename, "w", zipfile.ZIP_DEFLATED) as zfile:
@@ -128,7 +128,7 @@ def compile(args):
     file = args.file
 
     packages = download(args)
-    compiled = json.loads(packages.pop())
+    compiled = json.loads(packages.pop()) # XXX
     for lore in packages:
         lore = json.loads(lore)
         compiled["entries"].extend(lore["entries"])

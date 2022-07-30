@@ -1,3 +1,4 @@
+import inspect
 from functools import wraps
 import time
 
@@ -5,6 +6,20 @@ import requests
 
 from cpm.logging import logged
 from cpm import settings
+
+def loggedmethod(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        method_data = inspect.getfullargspec(method)
+        method_type = method.__name__.split("_")[0].upper()
+        # + 1 because of self
+        self.logger.info("%s %s", method_type, [f"{method_data.args[index + 1]}={value}" for index, value in enumerate(args)])
+
+        res =  method(self, *args, *kwargs)
+
+        self.logger.info("%s --success--", method_type)
+        return res
+    return wrapper
 
 def check_errors(request):
     """
@@ -88,6 +103,7 @@ class Client(requests.Session):
         del scheme["id"] # we don't use id
         assert scheme.keys() == self.SCHEME.keys(), set(scheme.keys()).difference(set(self.SCHEME))
 
+    @loggedmethod
     def list_item(self, page: int = 0, tags: list = None, name: str = None):
         """
         List the catalog.
