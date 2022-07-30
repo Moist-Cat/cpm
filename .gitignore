@@ -3,6 +3,7 @@ __pycache__/
 *.log
 *.audit
 *.error
+*.html
 *~
 *.swp
 *.json

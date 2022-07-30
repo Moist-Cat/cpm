@@ -58,6 +58,7 @@ def _display(data):
     Description: {data['desc']}
     Tags: {', '.join(data['tags'])}
     Depends on: {', '.join(data['deps'])}
+    Image: {data['image']}
     File: {data['file']}
     Date created: {data['date_created']}
     Date updated: {data['date_updated']}
@@ -158,6 +159,7 @@ def download(args):
             packages = _download(name, packages)
         else:
             logger.info("Found bad package %s. Ignoring...", name)
+    return packages
 
 
 def compile(args):
