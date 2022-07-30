@@ -1,3 +1,7 @@
+"""
+CLI commands go here.
+"""
+
 import os
 import json
 import zipfile
@@ -9,14 +13,89 @@ from cpm.logging import get_logger
 
 logger = get_logger("audit.command")
 logger_user = get_logger("user_info.command")
+logger_err = get_logger("error.command")
 
 client = Client()
 
 
+def _display(data):
+    """Display information about a package on the terminal"""
+    print(
+        f"""
+    Name: {data['name']}
+    ============================================================
+    Description: {data['desc']}
+    Tags: {', '.join(data['tags'])}
+    Depends on: {', '.join(data['deps'])}
+    Image: {data['image']}
+    File: {data['file']}
+    Date created: {data['date_created']}
+    Date updated: {data['date_updated']}
+    """
+    )
+
+
+def _dump_file(url, filename):
+    """
+    Dump a file specified on a package metadata to the filesystem.
+    In case of failure, warn and exit.
+    """
+    if not url or not url.startswith("http"):
+        logger.warning("%s is not a valid url", url)
+        return None
+    try:
+        res = client.get(url)
+    except Exception as exc:
+        logger_err.error(exc)
+        return None
+    if not res.ok:
+        return None
+
+    with open(filename, "w+b") as file:
+        file.write(res.content)
+    return res.content  # res.text is too slow and json.load accepts bytes
+
+
+def _download(name, packages=None):
+    """Low level implementation of download."""
+    logger.info("Downloading the %s package.")
+    logger_user.info("Downloading the %s package.")
+
+    packages = packages or {}
+    data = client.get_item(name)
+
+    image_url = data["image"]
+    file_url = data["file"]
+    name = data["name"]
+    files = []
+
+    if image_url:
+        image_name = name + "." + image_url.split(".")[-1]
+        if _dump_file(image_url, image_name):  # in case it gets deleted or bad url
+            files.append(image_name)
+    file_name = name + ".lorebook"
+    json_name = name + ".json"
+    files.extend((file_name, json_name))
+
+    with open(json_name, "w") as jfile:
+        json.dump(data, jfile)
+    packages[name] = _dump_file(file_url, file_name)
+
+    _package(files, name + ".zip")
+
+    for dep in data["deps"]:
+        if dep not in packages.keys() and dep != name:
+            packages.update(_download(dep, packages))
+        else:
+            logger.info("Found duplicate dependency %s. Ignoring...", dep)
+    return packages
+
+
 def _get_data(file):
+    """Fetch and sanitize data from the user."""
     if file:
-        with open(file) as f:
-            data = yaml.safe_load(f)
+        with open(file) as yfile:
+            data = yaml.safe_load(yfile)
     else:
         data = {
             "name": input("name: ").strip(),
@@ -42,6 +121,7 @@ def _get_data(file):
 
 
 def search(args):
+    """Search packages on the repository"""
     page = args.page
     tags = args.tags.split(",") if args.tags else None
     name = args.name
@@ -50,28 +130,14 @@ def search(args):
         print(item["name"])
 
 
-def _display(data):
-    print(
-        f"""
-    Name: {data['name']}
-    ============================================================
-    Description: {data['desc']}
-    Tags: {', '.join(data['tags'])}
-    Depends on: {', '.join(data['deps'])}
-    Image: {data['image']}
-    File: {data['file']}
-    Date created: {data['date_created']}
-    Date updated: {data['date_updated']}
-    """
-    )
-
-
 def info(args):
+    """Display information about a package"""
     data = client.get_item(args.name)
     _display(data)
 
 
 def upload(args):
+    """Upload metadata about a package to the repository"""
     data = {}
     file = args.file
 
@@ -82,6 +148,7 @@ def upload(args):
 
 
 def update(args):
+    """Update the metadata of a package"""
     data = client.get_item(args.name)
     file = args.file
 
@@ -92,23 +159,8 @@ def update(args):
     _display(res)
 
 
-def _dump_file(url, filename):
-    if not url or not url.startswith("http"):
-        print(f"{url} is not a valid url")
-        return
-    try:
-        res = client.get(url)
-    except Exception as exc:
-        print(exc)
-        return
-    if not res.ok:
-        return
-    with open(filename, "w+b") as file:
-        file.write(res.content)
-    return res.content # res.text is too slow and json.load accepts bytes
-
-
 def _package(files, filename):
+    """Compress files, delete them afterwards"""
     logger.info("Zipping %s into a package", files)
     logger_user.info("Zipping %s into a package", files)
     with zipfile.ZipFile(filename, "w", zipfile.ZIP_DEFLATED) as zfile:
@@ -117,48 +169,18 @@ def _package(files, filename):
             os.remove(name)
 
 
-def _download(name, packages=None):
-    logger.info("Downloading the %s package.")
-    logger_user.info("Downloading the %s package.")
-
-    packages = packages or {}
-    data = client.get_item(name)
-
-    image_url = data["image"]
-    file_url = data["file"]
-    name = data["name"]
-    files = []
-
-    if image_url:
-        image_name = name + "." + image_url.split(".")[-1]
-        if _dump_file(image_url, image_name): # in case it gets deleted or bad url
-            files.append(image_name)
-    file_name = name + ".lorebook"
-    json_name = name + ".json"
-    files.extend((file_name, json_name))
-
-    with open(json_name, "w") as jfile:
-        json.dump(data, jfile)
-    packages[name] = _dump_file(file_url, file_name)
-
-    _package(files, name + ".zip")
-
-    for dep in data["deps"]:
-        if dep not in packages.keys() and dep != name:
-            packages.update(_download(dep, packages))
-        else:
-            logger.info("Found bad dependency %s. Ignoring...", dep)
-    return packages
-
-
 def download(args):
+    """
+    Download one or more packages from the repository. Resolving dependencies and zipping
+    all files.
+    """
     names = [_.strip() for _ in args.name.split(",")]
     packages = {}
     for name in names:
         if name not in packages.keys():
             packages = _download(name, packages)
         else:
-            logger.info("Found bad package %s. Ignoring...", name)
+            logger.info("Found duplicate package %s. Ignoring...", name)
     return packages
 
 
