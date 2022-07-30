@@ -1,4 +1,4 @@
-import os
+"""Settings go here"""
 from pathlib import Path
 import sys
 import uuid
@@ -28,6 +28,7 @@ ITEM_SCHEME = {
 
 # secrets
 def get_keys():
+    """Get the auth token of the user from a file"""
     try:
         with open(BASE_DIR / "token.key") as file:
             token = file.read()

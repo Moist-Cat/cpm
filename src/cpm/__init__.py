@@ -1,3 +1,6 @@
+"""
+The CPM module
+"""
 from cpm import settings
 from cpm.logging import get_logger
 

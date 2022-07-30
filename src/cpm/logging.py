@@ -5,7 +5,7 @@ import logging.config
 
 from cpm import settings
 
-if settings.DEBUG is True:
+if settings.DEBUG:
     settings.LOGGERS["handlers"]["audit_file"] = settings.LOGGERS["handlers"]["console"]
 logging.config.dictConfig(settings.LOGGERS)
 
@@ -26,9 +26,9 @@ def logged(cls) -> Callable:
     cls.logger_mirror = logging.getLogger("user_info." + cls.__qualname__)
 
     def _log_mirror(self, *args, **kwargs):
-        logging.Logger._log(self, *args, kwargs)
-        logger._log(*args, **kwargs)
+        logging.Logger._log(self, *args, kwargs) # pylint: disable=W0212
+        logger._log(*args, **kwargs)# pylint: disable=W0212
 
-    cls.logger_mirror._log = _log_mirror.__get__(logger, logging.Logger)
+    cls.logger_mirror._log = _log_mirror.__get__(logger, logging.Logger) # pylint: disable=E1111,W0212
 
     return cls

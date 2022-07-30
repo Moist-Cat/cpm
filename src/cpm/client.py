@@ -1,3 +1,4 @@
+"""Module containing the http client with basic methods to interact with the server"""
 import inspect
 from functools import wraps
 import time
@@ -9,6 +10,7 @@ from cpm import settings
 
 
 def loggedmethod(method):
+    """Log a CRUD method and confirm its successful execution"""
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         method_data = inspect.getfullargspec(method)
@@ -115,8 +117,11 @@ class Client(requests.Session):
         res = self.get(self.DOCS_URL)
         try:
             scheme = res.json()["urls"]["/"]["scheme"]
-        except KeyError:
-            raise AssertionError("The sheme has been updated.")
+        except KeyError as exc:
+            msg = "The sheme has been updated"
+            self.logger_audit.critical(msg)
+            self.logger_err.critical(msg)
+            raise AssertionError(msg) from exc
         del scheme["id"]  # we don't use id
         assert scheme.keys() == self.SCHEME.keys(), set(scheme.keys()).difference(
             set(self.SCHEME)
