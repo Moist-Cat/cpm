@@ -83,7 +83,10 @@ class Client(requests.Session):
         super().__init__(*args, **kwargs)
         self.logger.info("##### INIT ######")
         self.headers["Authorization"] = settings.get_keys()
+
         self._test_scheme()
+
+        self.logger.info("Server up and running. Item scheme versions match.")
 
     @check_errors
     def request(self, *args, **kwargs):
@@ -129,11 +132,13 @@ class Client(requests.Session):
 
         return res.json()
 
+    @loggedmethod
     def get_item(self, name):
         """Get the details of a package"""
         res = self.get(self.URL + name)
         return res.json()
 
+    @loggedmethod
     def create_item(self, data: dict):
         """Create a package. The scheme is enforced."""
         for key in data.keys():
@@ -142,6 +147,7 @@ class Client(requests.Session):
         res = self.post(self.URL, json=data)
         return res.json()
 
+    @loggedmethod
     def update_item(self, data: dict, name: str):
         """
         Update an item.

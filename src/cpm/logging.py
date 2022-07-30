@@ -15,15 +15,18 @@ def get_logger(name="audit.root"):
 def logged(cls) -> Callable:
     """Decorator to log certain methods of each class while giving
     each clas its own logger."""
-    cls.logger = logging.getLogger("user_info." + cls.__qualname__)
+    logger = logging.getLogger("audit." + cls.__qualname__)
+    logger_user = logging.getLogger("user_info." + cls.__qualname__) 
+
+    cls.logger = logger
+    cls.logger_user = logger_user
     cls.logger_error = logging.getLogger("error." + cls.__qualname__)
-    logger_audit = logging.getLogger("audit." + cls.__qualname__)
-    cls.logger_audit = logger_audit
+    cls.logger_mirror = logging.getLogger("user_info." + cls.__qualname__)
 
     def _log_mirror(self, *args, **kwargs):
-        logging.Logger._log(self, *args, **kwargs)
-        logger_audit._log(*args, **kwargs)
-    cls.logger_mirror = cls.logger
-    cls.logger_mirror._log = _log_mirror.__get__(cls.logger, logging.Logger)
+        logging.Logger._log(self, *args, kwargs)
+        logger._log(*args, **kwargs)
+
+    cls.logger_mirror._log = _log_mirror.__get__(logger, logging.Logger)
 
     return cls
