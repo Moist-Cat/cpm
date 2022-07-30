@@ -9,14 +9,16 @@ if settings.DEBUG is True:
     settings.LOGGERS["handlers"]["audit_file"] = settings.LOGGERS["handlers"]["console"]
 logging.config.dictConfig(settings.LOGGERS)
 
+
 def get_logger(name="audit.root"):
     return logging.getLogger(name)
+
 
 def logged(cls) -> Callable:
     """Decorator to log certain methods of each class while giving
     each clas its own logger."""
     logger = logging.getLogger("audit." + cls.__qualname__)
-    logger_user = logging.getLogger("user_info." + cls.__qualname__) 
+    logger_user = logging.getLogger("user_info." + cls.__qualname__)
 
     cls.logger = logger
     cls.logger_user = logger_user

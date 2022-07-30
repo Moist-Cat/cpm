@@ -9,7 +9,11 @@ DEBUG = True
 
 # client settings
 RETRIES = 3
-URL = "https://moistcat.pythonanywhere.com/" if DEBUG is False else "http://localhost:5050/"
+URL = (
+    "https://moistcat.pythonanywhere.com/"
+    if DEBUG is False
+    else "http://localhost:5050/"
+)
 ITEM_SCHEME = {
     "name": "",
     "deps": [],
@@ -19,7 +23,7 @@ ITEM_SCHEME = {
     "file": "",
     "service": "NAI",
     "date_created": "",
-    "date_updated": ""
+    "date_updated": "",
 }
 
 # secrets
@@ -32,6 +36,7 @@ def get_keys():
         with open(BASE_DIR / "token.key", "w") as file:
             file.write(token)
     return token
+
 
 # logger settings
 LOGGERS = {

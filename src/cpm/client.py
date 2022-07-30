@@ -7,25 +7,36 @@ import requests
 from cpm.logging import logged
 from cpm import settings
 
+
 def loggedmethod(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         method_data = inspect.getfullargspec(method)
         method_type = method.__name__.split("_")[0].upper()
         # + 1 because of self
-        self.logger.info("%s %s", method_type, [f"{method_data.args[index + 1]}={value}" for index, value in enumerate(args)])
+        self.logger.info(
+            "%s %s",
+            method_type,
+            [
+                f"{method_data.args[index + 1]}={value}"
+                for index, value in enumerate(args)
+            ],
+        )
 
-        res =  method(self, *args, *kwargs)
+        res = method(self, *args, *kwargs)
 
         self.logger.info("%s --success--", method_type)
         return res
+
     return wrapper
+
 
 def check_errors(request):
     """
     VERSION: 1.0.1
     Properly handles HTTP and other comms related errors.
     """
+
     @wraps(request)
     def inner_func(cls, method, url, **kwargs):
         request_success = False
@@ -44,8 +55,7 @@ def check_errors(request):
                 cls.logger_error.error(
                     "Server URL: %s, failed while trying to connect.", url
                 )
-                if retries > 60*60*24: # a day
-                    # avoid memory leaks
+                if retries > settings.RETRIES:
                     raise exc
 
             except requests.exceptions.HTTPError as exc:
@@ -68,14 +78,17 @@ def check_errors(request):
             time.sleep(1)
             retries += 1
         return response
+
     return inner_func
+
 
 @logged
 class Client(requests.Session):
     """Main client for the Card Package Manager. Handles a basic CRUD for packages"""
+
     URL: str = settings.URL
     SCHEME: dict = settings.ITEM_SCHEME
-    _last_response: requests.Response = None # for testing and debugging
+    _last_response: requests.Response = None  # for testing and debugging
 
     DOCS_URL = URL + "docs"
 
@@ -104,8 +117,10 @@ class Client(requests.Session):
             scheme = res.json()["urls"]["/"]["scheme"]
         except KeyError:
             raise AssertionError("The sheme has been updated.")
-        del scheme["id"] # we don't use id
-        assert scheme.keys() == self.SCHEME.keys(), set(scheme.keys()).difference(set(self.SCHEME))
+        del scheme["id"]  # we don't use id
+        assert scheme.keys() == self.SCHEME.keys(), set(scheme.keys()).difference(
+            set(self.SCHEME)
+        )
 
     @loggedmethod
     def list_item(self, page: int = 0, tags: list = None, name: str = None):
