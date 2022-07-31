@@ -19,6 +19,15 @@ logger_err = get_logger("error.command")
 client = Client()
 
 
+def _compile(template: dict, packages: dict):
+    compiled = template
+    for lore in packages.values():
+        lore = json.loads(lore)
+        compiled["entries"].extend(lore["entries"])
+        compiled["categories"].extend(lore["categories"])
+    return compiled
+
+
 def _display(data):
     """Display information about a package on the terminal"""
     print(
@@ -130,15 +139,29 @@ def _package(files, filename):
             zfile.write(name)
             os.remove(name)
 
+def _tail(name):
+    with open(name) as file:
+        eof = file.seek(0, 2) # end
+        file.seek(0)
+        if eof - 50*200 > 0: # ~ 200 entries 
+            file.seek(eof - 50*200)
+        return file.read()
+
 
 def search(args):
     """Search packages on the repository"""
     page = args.page
     tags = args.tags.split(",") if args.tags else None
     name = args.name
-    data = client.list_item(page, tags, name)
-    for item in data:
-        print(item["name"])
+    while True:
+        data = client.list_item(page, tags, name)
+        for item in data:
+            print(item["name"])
+        if len(data < 10):
+            break
+        print("======================================")
+        input("Press enter to see the next page...")
+        page +=1
 
 
 def info(args):
@@ -176,21 +199,12 @@ def compile(args):
     packages = download(args)
     first = args.name.split(",")[0]
 
-    compiled = json.loads(packages[first])
-    for lore in packages.values():
-        lore = json.loads(lore)
-        compiled["entries"].extend(lore["entries"])
-        compiled["categories"].extend(lore["categories"])
+    template = json.loads(packages[first])
+    compiled = _compile(template, packages)
+
     with open(file, "w") as jfile:
         json.dump(compiled, jfile)
-
-def _tail(name):
-    with open(name) as file:
-        eof = file.seek(0, 2) # end
-        file.seek(0)
-        if eof - 50*200 > 0: # ~ 200 entries 
-            file.seek(eof - 50*200)
-        return file.read()
+    return compiled
 
 def debug(args):
     print()
