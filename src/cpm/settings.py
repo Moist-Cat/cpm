@@ -1,11 +1,12 @@
 """Settings go here"""
+import os
 from pathlib import Path
 import sys
 import uuid
 
 BASE_DIR = Path(__file__).parent
 
-DEBUG = True
+DEBUG = os.environ.get("CPM_DEBUG", False)
 
 # client settings
 RETRIES = 3

@@ -1,14 +1,24 @@
+
 env/*
+
 __pycache__/
+
+# user files
+**/logs/*
 *.log
 *.audit
 *.error
 *.html
+*.key
+
+# vim
 *~
 *.swp
 *.json
 *.un~
+*.swo
+
+# packaging
 dist/*
 build/*
 **/*.egg-info/*
-*.swo

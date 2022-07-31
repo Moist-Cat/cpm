@@ -160,7 +160,10 @@ def search(args):
         if len(data < 10):
             break
         print("======================================")
-        input("Press enter to see the next page...")
+        try:
+            input("Press enter to see the next page...")
+        except KeyboardInterrupt:
+            break
         page +=1
 
 
