@@ -9,7 +9,7 @@ with open("requirements.txt") as file:
 
 setuptools.setup(
      name="cpm",
-     version="0.0.1",
+     version="0.1.0",
      author="Moist-Cat",
      author_email="moistanonpy@gmail.com",
      description="Card Package Manager",
