@@ -5,6 +5,7 @@ __pycache__/
 
 # user files
 **/logs/*
+**/logs.gitkeep
 *.log
 *.audit
 *.error

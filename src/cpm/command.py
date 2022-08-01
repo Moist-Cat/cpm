@@ -157,7 +157,7 @@ def search(args):
         data = client.list_item(page, tags, name)
         for item in data:
             print(item["name"])
-        if len(data < 10):
+        if len(data) < 10:
             break
         print("======================================")
         try:
