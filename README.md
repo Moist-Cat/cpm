@@ -11,7 +11,7 @@ To install all requirements, use the following snippet after installing python o
 
 Or just:
 
-    pip install cpm
+    pip install cpm-aids
 
 ## Portability
 
