@@ -8,8 +8,8 @@ with open("requirements.txt") as file:
     REQUIREMENTS = file.read().split("\n")
 
 setuptools.setup(
-     name="cpm",
-     version="0.1.1",
+     name="cpm-aids",
+     version="0.1.2",
      author="Moist-Cat",
      author_email="moistanonpy@gmail.com",
      description="Card Package Manager",

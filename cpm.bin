@@ -1,1 +1,4 @@
-pass
+@echo off & python -x "%~f0" %* & goto :eof
+from cpm import __main__
+
+__main__.get_command()
